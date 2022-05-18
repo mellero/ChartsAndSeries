@@ -6,7 +6,7 @@ export type Facet = 'facet1' | 'facet2' | 'facet3' | 'facet4';
 export interface DataPoint {
   id: number;
   label: string;
-  value: any;
+  data: { facetTypes: string[], value: string }[];
 }
 
 export interface Series {

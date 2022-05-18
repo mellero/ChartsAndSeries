@@ -41,19 +41,12 @@ export class SeriesService {
   public getAll(series: Series[]): Observable<SeriesData> {
     this.refreshList.clear();
 
-    // Issue.. Not retroactive. First series dont map to same obs as
-    // later series
-    const results = series.map((single) => {
+    series.forEach((single) => {
       const hash = this.hash(single);
       const searchResult = this.do(single, hash);
       this.cache.set(hash, searchResult);
-      return {
-        key: single.id,
-        ...searchResult,
-      };
     });
-    console.log(results);
-    return from(results).pipe(
+    return from(this.getSeriesFromRefreshList(series)).pipe(
       mergeMap((search) =>
         search.data.pipe(
           map(
@@ -139,7 +132,6 @@ export class SeriesService {
 
   private mergeFacets(existing: Facet[], newFacets: Facet[]): Facet[] {
     const res = Array.from(new Set(existing.concat(newFacets))) as Facet[];
-    console.log('merged', res);
     return res;
   }
 
@@ -147,17 +139,28 @@ export class SeriesService {
     return series.filters.sort().join('.');
   }
 
-  // TODO: Buffer requests?
   private apiCall(search: Search): Observable<DataPoint[]> {
     return of(
       search.filters.map((f, i) => ({
         id: i,
         label: f,
-        value: search.facets.map((fac) => f + '.' + fac),
+        data: search.facets.map((fac) => ({
+          facetTypes: [fac],
+          value: f + '.' + fac,
+        })),
       }))
-    )
-      .pipe
-      // tap(() => console.log('got', search.filters))
-      ();
+    );
+  }
+
+  private getSeriesFromRefreshList(
+    series: Series[]
+  ): { key: string; data: Observable<DataPoint[]> }[] {
+    return series.map((s) => {
+      const hash = this.hash(s);
+      return {
+        key: s.id,
+        data: this.refreshList.get(this.hash(s)).data,
+      };
+    });
   }
 }

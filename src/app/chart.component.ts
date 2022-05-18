@@ -9,7 +9,9 @@ import { Series } from './series.model';
       {{ series?.id || 'loading...' }}
       <div *ngIf="series?.dataProvider | async as data">
         <div *ngFor="let datum of data">
-          {{ datum.value }}
+          <div *ngFor="let point of datum.data">
+            {{ point.value }}
+          </div>
         </div>
       </div>
     </div>
